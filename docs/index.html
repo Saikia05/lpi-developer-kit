@@ -80,6 +80,8 @@
     <div class="stat" data-tip="Built and submitted a working deliverable"><b id="s-l3">-</b><small>Shipping</small></div>
 </div>
 
+<div class="stats-row" id="track-stats" style="margin-top:0"></div>
+
 <div class="container">
     <div class="controls">
         <input type="text" class="search-box" placeholder="Search by name, skill, or track..." oninput="filter()">
@@ -87,6 +89,14 @@
         <button class="fbtn" onclick="setLevel(3,this)">Shipping</button>
         <button class="fbtn" onclick="setLevel(2,this)">Running</button>
         <button class="fbtn" onclick="setLevel(1,this)">Registered</button>
+        <span style="color:#2d3748;margin:0 0.3rem">|</span>
+        <button class="fbtn" onclick="setTrack('all',this)" id="tbtn-all">All Tracks</button>
+        <button class="fbtn" onclick="setTrack('A',this)">A: Agents</button>
+        <button class="fbtn" onclick="setTrack('B',this)">B: Content</button>
+        <button class="fbtn" onclick="setTrack('C',this)">C: Design</button>
+        <button class="fbtn" onclick="setTrack('D',this)">D: 3D</button>
+        <button class="fbtn" onclick="setTrack('E',this)">E: QA/Sec</button>
+        <button class="fbtn" onclick="setTrack('none',this)">No Track</button>
     </div>
     <div class="table-wrap">
         <table>
@@ -108,6 +118,7 @@
 <script>
 let allData = [];
 let curLevel = 'all';
+let curTrack = 'all';
 let curSearch = '';
 
 const stageNames = {1:'Registered', 2:'Running', 3:'Shipping'};
@@ -129,8 +140,14 @@ fetch('data.json')
 
 function setLevel(l, el) {
     curLevel = l;
-    document.querySelectorAll('.fbtn').forEach(b => b.classList.remove('active'));
+    // Only deactivate level buttons, not track buttons
+    el.parentElement.querySelectorAll('.fbtn').forEach(b => b.classList.remove('active'));
     el.classList.add('active');
+    render();
+}
+
+function setTrack(t, el) {
+    curTrack = t;
     render();
 }
 
@@ -139,16 +156,41 @@ function filter() {
     render();
 }
 
+function getTrackKey(track) {
+    if (!track) return 'none';
+    const t = track.trim().toUpperCase();
+    if (t.startsWith('A')) return 'A';
+    if (t.startsWith('B')) return 'B';
+    if (t.startsWith('C')) return 'C';
+    if (t.startsWith('D')) return 'D';
+    if (t.startsWith('E')) return 'E';
+    return 'none';
+}
+
 function render() {
     let data = allData;
 
     if (curLevel !== 'all') data = data.filter(d => d.level === curLevel);
+    if (curTrack !== 'all') {
+        if (curTrack === 'none') data = data.filter(d => !d.track || d.track.trim() === '');
+        else data = data.filter(d => getTrackKey(d.track) === curTrack);
+    }
     if (curSearch) data = data.filter(d =>
         d.name.toLowerCase().includes(curSearch) ||
         (d.skills || []).some(s => s.toLowerCase().includes(curSearch)) ||
         (d.track || '').toLowerCase().includes(curSearch) ||
         (d.github || '').toLowerCase().includes(curSearch)
     );
+
+    // Track stats
+    const trackColors = {A:'#b794f4', B:'#68d391', C:'#ed8936', D:'#63b3ed', E:'#fc8181', none:'#718096'};
+    const trackNames = {A:'Agent Builders', B:'Content & Research', C:'Design & UX', D:'3D & Viz', E:'QA & Security', none:'No Track'};
+    const trackCounts = {};
+    allData.forEach(d => { const k = getTrackKey(d.track); trackCounts[k] = (trackCounts[k]||0)+1; });
+    document.getElementById('track-stats').innerHTML = Object.entries(trackCounts)
+        .sort((a,b) => b[1]-a[1])
+        .map(([k,v]) => `<div class="stat" style="border-color:${trackColors[k]||'#2d3748'}40;min-width:80px;padding:0.6rem 1rem;cursor:pointer" onclick="setTrack('${k}',this)"><b style="font-size:1.4rem;background:${trackColors[k]||'#718096'};-webkit-background-clip:text;-webkit-text-fill-color:transparent">${v}</b><small>${trackNames[k]||k}</small></div>`)
+        .join('');
 
     // Stats (always from full data)
     document.getElementById('s-total').textContent = allData.length;
