@@ -265,7 +265,7 @@ function render() {
         const lvNum = `<span style="display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:50%;background:${lvColors[d.level]||'#718096'}20;color:${lvColors[d.level]||'#718096'};font-size:0.65rem;font-weight:700;font-family:'JetBrains Mono',monospace;margin-right:0.4rem;border:1px solid ${lvColors[d.level]||'#718096'}40">${d.level}</span>`;
 
         // Track count
-        const trackCount = d.track ? d.track.split(/[,\/&]/).filter(t => t.trim()).length : 0;
+        const trackCount = d.track ? d.track.split(/[,\/]/).filter(t => t.trim() && t.trim().match(/^[A-E]/)).length : 0;
         const trackBadge = trackCount > 1 ? `<span style="font-size:0.6rem;color:#ed8936;margin-left:0.3rem" data-tip="${trackCount} tracks">${trackCount}x</span>` : '';
 
         return `<tr>
